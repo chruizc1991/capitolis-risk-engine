@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\ESHA\OneDrive\Documents\UCB MFE\Capitolis\capitolis_pricers\examples\price_all.py", line 36, in <module>
+    main()
+  File "C:\Users\ESHA\OneDrive\Documents\UCB MFE\Capitolis\capitolis_pricers\examples\price_all.py", line 31, in main
+    print(f"{tid:12s} NPV = {p.npv(market, reporting=True):15,.2f} {market.reporting_ccy}")
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ESHA\OneDrive\Documents\UCB MFE\Capitolis\capitolis_pricers\pricers\base.py", line 15, in npv
+    value = self._npv_trade_ccy(market)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ESHA\OneDrive\Documents\UCB MFE\Capitolis\capitolis_pricers\pricers\equity_trs.py", line 113, in _npv_trade_ccy
+    receiver = self._equity_leg(market) - self._funding_leg(market)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ESHA\OneDrive\Documents\UCB MFE\Capitolis\capitolis_pricers\pricers\equity_trs.py", line 76, in _equity_leg
+    s_ccy = self._spot_ccy(market, pos)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ESHA\OneDrive\Documents\UCB MFE\Capitolis\capitolis_pricers\pricers\equity_trs.py", line 69, in _spot_ccy
+    return market.equity_spot(pos.isin) * market.fx(pos.currency, self.trade_currency)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ESHA\OneDrive\Documents\UCB MFE\Capitolis\capitolis_pricers\market.py", line 46, in equity_spot
+    raise KeyError(f"No spot for security '{isin}'")
+KeyError: "No spot for security 'US8168501018'"
+Valuation 2026-01-15   reporting USD   (CLGM sells the TRS: pays total return, receives funding)
+
