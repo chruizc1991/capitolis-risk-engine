@@ -33,10 +33,10 @@ genuinely **not started**.
 |---|---|
 | Source | yfinance (spot, historical prices); dividend yield via yfinance trailing yield or put-call parity if options data available |
 | Identifier | ISIN (keys `MarketState.equity_spots`) — mapped from `trade_data/underlyings/equities.csv`; yfinance needs ticker, so ISIN→ticker mapping must be preserved (the `ticker` column already provides this) |
-| Names | 41 unique (ticker, ISIN) pairs across the 8 Equity TRS baskets — see inventory in week1_pricer_review.md; includes 3 JPY-quoted names (`6902.T`, `7751.T`, `4901.T`, `5108.T`, `4503.T`, `8035.T` — 6 JPY names total across EQTRS_0005/0006) |
+| Names | 41 basket rows / 37 unique ISINs across the 8 Equity TRS baskets (some names, e.g. AAPL, repeat across baskets) — see inventory in week1_pricer_review.md; includes 6 JPY-quoted names (`6902.T`, `7751.T`, `4901.T`, `5108.T`, `4503.T`, `8035.T` across EQTRS_0005/0006) |
 | Date range | Snapshot as of valuation date for pricing; 1-3yrs daily history for vol/correlation calibration (see §5) |
 | Frequency | Daily |
-| Status | **not started** |
+| Status | **pulled** — live snapshot fetched via `src/risk_engine/market/equities.fetch_raw()` for all 37 ISINs, cached at `data/raw/equity_spots_2026-08-24.json`. Not yet **validated** (no cross-check against a second source; `div_yield` blanks defaulted to 0.0, needs review before use) |
 
 ## 3. USDJPY FX spot and forward curve
 
@@ -90,7 +90,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 | # | Series | Status |
 |---|---|---|
 | 1 | USD OIS (SOFR) curve | not started |
-| 2 | Equity spots + dividends (41 names) | not started |
+| 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | not started |
 | 4 | Volatilities (43 factors) | not started |
 | 5 | Correlation matrix (historical proxy, Week 2) | not started — start pulling 1-3yr history now |
