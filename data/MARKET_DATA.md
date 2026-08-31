@@ -55,21 +55,22 @@ genuinely **not started**.
 
 | Field | Value |
 |---|---|
-| Source | TBD — implied vols (options market data, e.g. CBOE/OptionMetrics) preferred; historical realized vol as a fallback proxy |
-| Factors | `RATE_USD`, one per equity ISIN (41), `FX_USDJPY` — 43 factors total |
-| Date range | Depends on method: implied = snapshot; historical proxy = same lookback as §5 |
-| Frequency | Daily (or per calibration run) |
-| Status | **not started** |
+| Source | **Historical realized vol** (the documented fallback), computed from the 3yr daily history already pulled for §5 — `src/risk_engine/market/vols.py`. Implied vols (options data, e.g. CBOE/OptionMetrics) would be more standard but no source is confirmed yet; realized vol unblocks pricing/simulation now and can be swapped later |
+| Method | Equity/FX: annualized lognormal vol on daily log returns (`std(log(S_t/S_t-1)) * sqrt(252)`). Rate: annualized normal vol on daily rate **changes**, not log returns (rate levels can be near zero, so log returns aren't meaningful) |
+| Factors | `RATE_USD`, one per equity ISIN (37 unique), `FX_USDJPY` — 39 factors total (37 not 41: some names repeat across baskets, see §2) |
+| Date range | 3yr, matching §5's history (2023-08-31 to 2026-08-30) |
+| Frequency | Daily inputs -> one annualized vol number per factor |
+| Status | **pulled + computed**. Results sane: equity vols mostly 16%-58% (one outlier, SMTC/`US8168501018` at 76% — checked against its price history, a genuinely volatile name with several 20-30% single-day moves, not a data bug); `FX_USDJPY` at 9.3%; `RATE_USD` (normal vol) at ~63bp. Cached at `data/processed/volatilities.csv` (gitignored) |
 
 ## 5. Pairwise correlation matrix
 
 | Field | Value |
 |---|---|
 | Source | Historical correlation proxy (Week 2 task per project scope) — daily log returns of the USD short rate, each of the 41 equity spots, and USDJPY |
-| History to start pulling now | **1-3 years of daily returns** for all 43 factors, so the Week 2 correlation build isn't blocked on data collection |
+| History to start pulling now | **1-3 years of daily returns** for all 39 factors, so the Week 2 correlation build isn't blocked on data collection |
 | Date range | 2023-08-31 to 2026-08-30 (3yr) as the outer bound; can trim to 1yr if data quality/availability is an issue for some names |
 | Frequency | Daily |
-| Status | **history pulled** (not yet correlated — that's Week 2). `scripts/pull_historical_data.py` fetches all 43 factors: SOFR level (FRED, 781 obs), USDJPY (yfinance, 777 obs), all 37 equity names (yfinance, 778 rows after normalizing US/Tokyo market-hour timestamps to date-only — mixed timestamps initially produced a mostly-NaN merge, fixed). ~4% NaN remaining (expected: holiday mismatches between US/Tokyo calendars). Cached at `data/processed/history_{sofr,usdjpy,equities}.csv` (gitignored) |
+| Status | **history pulled** (not yet correlated — that's Week 2). `scripts/pull_historical_data.py` fetches all 39 factors: SOFR level (FRED, 781 obs), USDJPY (yfinance, 777 obs), all 37 equity names (yfinance, 778 rows after normalizing US/Tokyo market-hour timestamps to date-only — mixed timestamps initially produced a mostly-NaN merge, fixed). ~4% NaN remaining (expected: holiday mismatches between US/Tokyo calendars). Cached at `data/processed/history_{sofr,usdjpy,equities}.csv` (gitignored) |
 
 ## 6. Risk-free government/agency bond reference data (validation)
 
@@ -93,8 +94,8 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 | 1 | USD OIS (SOFR) curve | pulled + bootstrapped + validated (found and fixed a real bug via cross-check) |
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
-| 4 | Volatilities (43 factors) | not started |
-| 5 | Correlation matrix (historical proxy, Week 2) | 3yr history pulled for all 43 factors; correlation calc itself is Week 2 |
+| 4 | Volatilities (39 factors) | pulled + computed (historical realized, sane) |
+| 5 | Correlation matrix (historical proxy, Week 2) | 3yr history pulled for all 39 factors; correlation calc itself is Week 2 |
 | 6 | Bond reference data (validation cross-check) | not started (optional) |
 
 **USD curve unblocked** — Databento (paid, confirmed access) covers SOFR
