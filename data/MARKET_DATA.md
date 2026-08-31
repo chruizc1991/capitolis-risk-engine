@@ -4,12 +4,12 @@ Tracks collection status for every market-data series required to price and
 simulate the book. Field/format specs live in the original source spec,
 preserved at [`data/MARKET_DATA_source.md`](MARKET_DATA_source.md) (copied
 verbatim from the pricer package's `MARKET_DATA.md`). This file is the
-Week 1 collection checklist reconciled against that spec — see also
-[`docs/week_notes/week1_pricer_review.md`](../docs/week_notes/week1_pricer_review.md).
+collection checklist reconciled against that spec — see also
+[`docs/notes/pricer_review.md`](../docs/notes/pricer_review.md).
 
 No series ship with `capitolis_pricers/` beyond three illustrative sample
-spots in `capitolis_pricers/data/sample_market.py` — everything below is
-genuinely **not started**.
+spots in `capitolis_pricers/data/sample_market.py` — all five series below
+have since been collected from real sources; see each section for details.
 
 ## Legend
 `not started` · `pulled` (raw data landed in `data/raw/`) · `validated` (checked, cleaned, in `data/processed/`)
@@ -34,7 +34,7 @@ genuinely **not started**.
 |---|---|
 | Source | yfinance (spot, historical prices); dividend yield via yfinance trailing yield or put-call parity if options data available |
 | Identifier | ISIN (keys `MarketState.equity_spots`) — mapped from `trade_data/underlyings/equities.csv`; yfinance needs ticker, so ISIN→ticker mapping must be preserved (the `ticker` column already provides this) |
-| Names | 41 basket rows / 37 unique ISINs across the 8 Equity TRS baskets (some names, e.g. AAPL, repeat across baskets) — see inventory in week1_pricer_review.md; includes 6 JPY-quoted names (`6902.T`, `7751.T`, `4901.T`, `5108.T`, `4503.T`, `8035.T` across EQTRS_0005/0006) |
+| Names | 41 basket rows / 37 unique ISINs across the 8 Equity TRS baskets (some names, e.g. AAPL, repeat across baskets) — see inventory in `docs/notes/pricer_review.md`; includes 6 JPY-quoted names (`6902.T`, `7751.T`, `4901.T`, `5108.T`, `4503.T`, `8035.T` across EQTRS_0005/0006) |
 | Date range | Snapshot as of valuation date for pricing; 1-3yrs daily history for vol/correlation calibration (see §5) |
 | Frequency | Daily |
 | Status | **pulled** — live snapshot fetched via `src/risk_engine/market/equities.fetch_raw()` for all 37 ISINs, cached at `data/raw/equity_spots_2026-08-24.json`. Not yet **validated** (no cross-check against a second source; `div_yield` blanks defaulted to 0.0, needs review before use) |
@@ -66,8 +66,8 @@ genuinely **not started**.
 
 | Field | Value |
 |---|---|
-| Source | Historical correlation proxy (Week 2 task per project scope) — daily log returns of the USD short rate, each of the 41 equity spots, and USDJPY |
-| History to start pulling now | **1-3 years of daily returns** for all 39 factors, so the Week 2 correlation build isn't blocked on data collection |
+| Source | Historical correlation proxy — daily log returns of the USD short rate, each of the 41 equity spots, and USDJPY |
+| History | **1-3 years of daily returns** for all 39 factors |
 | Date range | 2023-08-31 to 2026-08-30 (3yr) as the outer bound; can trim to 1yr if data quality/availability is an issue for some names |
 | Frequency | Daily |
 | Status | **built** — `src/risk_engine/market/correlations.py` computes the full 39x39 pairwise matrix (log returns for equity/FX, rate changes for RATE_USD, inner-joined on common dates -- 613 fully-aligned days -- so the matrix is PSD by construction, not just hoped to be). **PSD confirmed**: min eigenvalue 0.16 (safely positive). Sanity checks pass: RATE_USD correlates weakly with everything (-4% to +9%, expected for daily rate changes); FX_USDJPY correlates positively with the JPY-quoted equity names (~0.25 avg, economically sensible); equity-equity pairwise correlation averages ~0.15 (reasonable for a mixed-sector, mixed-market basket), max 0.82. Cached at `data/processed/correlation_matrix.csv` (gitignored). History itself: `scripts/pull_historical_data.py` fetches all 39 factors (SOFR/FRED 781 obs, USDJPY/yfinance 777 obs, 37 equities/yfinance 778 rows) — fixed two tz-alignment bugs (US/Tokyo market-hour timestamps for equities, then the same class of bug for FX) that were silently breaking the join |
@@ -95,7 +95,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (39 factors) | pulled + computed (historical realized, sane) |
-| 5 | Correlation matrix (historical proxy, Week 2) | built, PSD-confirmed, sanity-checked |
+| 5 | Correlation matrix (historical proxy) | built, PSD-confirmed, sanity-checked |
 | 6 | Bond reference data (validation cross-check) | not started (optional) |
 
 **USD curve unblocked** — Databento (paid, confirmed access) covers SOFR

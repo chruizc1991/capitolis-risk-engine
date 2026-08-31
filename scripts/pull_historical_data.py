@@ -1,8 +1,8 @@
 """
-Pull ~3 years of daily history for every risk factor, for Week 2's
-correlation build (data/MARKET_DATA.md #5). Does not compute correlations
-itself -- just lands clean daily series in data/processed/ so that work
-isn't blocked on data collection.
+Pull ~3 years of daily history for every risk factor, for the correlation
+build (data/MARKET_DATA.md #5; see src/risk_engine/market/correlations.py
+for the actual matrix computation). This script only lands clean daily
+series in data/processed/.
 
 Risk factors: USD short rate (SOFR level, FRED), all 37 equity spots
 (yfinance), USDJPY spot (yfinance).

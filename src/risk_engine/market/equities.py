@@ -3,8 +3,7 @@ Equity spot prices + dividend yields for the 41 underlying names — fetch/clean
 
 Keyed by ISIN (see data/MARKET_DATA.md §2); ISIN->ticker mapping comes from
 trade_data/underlyings/equities.csv (yfinance needs a ticker, not an ISIN).
-Uses yfinance — free, no API key, good enough to unblock Week 1 while a
-paid-source decision (Bloomberg/Refinitiv) is still open for rates/FX.
+Uses yfinance — free, no API key needed.
 """
 import yfinance as yf
 

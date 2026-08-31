@@ -1,9 +1,9 @@
 """
 Pairwise correlation matrix across all risk factors (data/MARKET_DATA.md #5) --
-the historical-proxy correlation build flagged as Week 2 scope, computed here
-from the 3yr daily history already pulled (pull_historical_data.py) and the
-per-factor return convention already established in vols.py (log returns for
-equity/FX, simple differences for the rate level).
+the historical-proxy correlation build, computed from the 3yr daily history
+already pulled (pull_historical_data.py) and the per-factor return convention
+already established in vols.py (log returns for equity/FX, simple differences
+for the rate level).
 
 Uses only rows where ALL factors have data (pairwise-complete correlation can
 produce a non-positive-semidefinite matrix when missingness differs across

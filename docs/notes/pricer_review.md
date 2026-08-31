@@ -1,4 +1,4 @@
-# Week 1 — Pricer Contract Review (2026-08-24)
+# Pricer Contract Review (2026-08-24)
 
 Full source: [`docs/pricer_contract.md`](../pricer_contract.md) (original
 `capitolis_pricers/README.md`). This is the working summary of what each
@@ -115,8 +115,10 @@ BF_0003   88,465,054.80      BTRS_0003      3,698.41
 BF_0004    1,872,914.48      BTRS_0004        -38.66
 ```
 
-Equity TRS pricing (including the JPY compo trades) will run end-to-end once
-`data/MARKET_DATA.md` §2/§3 (equity spots, FX spot) are collected.
+Equity TRS pricing (including the JPY compo trades) now runs end-to-end
+against real data — see `scripts/price_full_book_real_data.py` and
+`data/MARKET_DATA.md` §2/§3 for how equity spots and the FX spot were
+collected.
 
 ## Trade inventory (16 trades)
 
@@ -124,14 +126,13 @@ Equity TRS pricing (including the JPY compo trades) will run end-to-end once
 
 | Instrument | Count |
 |---|---|
-| Equity TRS | 8 (7 USD, **1 JPY compo**) |
+| Equity TRS | 8 (6 USD, **2 JPY compo**) |
 | Bond Forward | 4 |
 | Bond TRS | 4 |
 
 Note: `trade_data/underlyings/equities.csv` shows **2** JPY-basket trade IDs
-(`EQTRS_0005`, `EQTRS_0006`), not 1. See "JPY compo trades" flag below — this
-differs from the brief's "1 JPY compo" count and should be confirmed with
-Capitolis at the Friday check-in.
+(`EQTRS_0005`, `EQTRS_0006`) — confirmed correct (the kickoff brief's "1 JPY
+compo" wording was the outdated reference, not the trade data).
 
 **By counterparty (3 total):**
 
@@ -149,15 +150,11 @@ for JPY). Full basket detail in `trade_data/underlyings/equities.csv`.
 Bond Forwards and 4 Bond TRS (`Bond_B`, `Bond_C`, `Bond_E` each referenced by
 two trades).
 
-## ⚠ JPY compo trades — flagged
+## JPY compo trades
 
 `EQTRS_0005` and `EQTRS_0006` are JPY-quoted baskets (`currency = JPY` in
 `equities.csv`, tickers like `6902.T`). Per the pricer contract §4/§7, a
 compo trade has **3 risk factors** instead of 2: **USD curve + equity spot +
 USDJPY FX** (vs. USD curve + equity spot only for the other 6). This affects
-both the market data we must collect (USDJPY FX curve, §3) and the
-correlation matrix (USDJPY must be included as its own factor, §5/§6).
-
-The kickoff brief describes "1 Equity TRS incl. 1 JPY compo" (implying 1 of
-the 8 is JPY); the data shows 2 JPY-basket trade IDs out of 8. Flagging this
-discrepancy for the Friday check-in rather than silently reconciling it.
+both the market data we collect (USDJPY FX curve, §3) and the correlation
+matrix (USDJPY is its own factor, §5/§6).

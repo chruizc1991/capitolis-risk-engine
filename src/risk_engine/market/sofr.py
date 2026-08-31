@@ -111,7 +111,7 @@ def _contract_period(symbol, ref_date):
     in the feed, not a contract 10 years out -- build_curve() filters those
     out via its "already covered" check rather than us guessing a wrapped
     decade here (an earlier version did that and produced a spurious
-    multi-year gap in the curve; see week1 notes)."""
+    multi-year gap in the curve; see data/MARKET_DATA.md #1)."""
     if not _OUTRIGHT_RE.match(symbol):
         raise ValueError(f"Not an outright SR3/SR1 symbol: {symbol!r}")
     month = _MONTH_CODE[symbol[3]]
