@@ -24,7 +24,7 @@ genuinely **not started**.
 | Date range | Single as-of snapshot for the valuation date; if a historical-proxy curve build is needed, pull daily back to the depth of the vol/correl lookback (see §5) |
 | Frequency | Daily (snapshot as of valuation date) |
 | Day count | ACT/360 |
-| Status | **in progress** — `src/risk_engine/market/sofr.py` fetch/clean implemented against the Databento API (`fetch_raw`, `clean`); not yet run (needs `DATABENTO_API_KEY` env var set locally). Bootstrapping (`build_curve`: map each SR3 contract's IMM period to a curve pillar and derive discount factors) is the remaining piece, not yet implemented |
+| Status | **pulled** — 33 outright SR3 contract settlement prices fetched live via Databento and converted to implied forward rates (3.6%–4.6%, sane range), cached at `data/raw/sofr_sr3_futures_2026-08-28.json`. Not yet **validated**/bootstrapped into an actual curve — `build_curve()` (map each contract's IMM period to a curve pillar, derive discount factors) is the remaining piece |
 | Note | API key is never committed to the repo — set via environment variable only |
 
 ## 2. Equity spot prices + dividend yields (41 names)
@@ -89,7 +89,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 
 | # | Series | Status |
 |---|---|---|
-| 1 | USD OIS (SOFR) curve | in progress (Databento fetch coded, bootstrapping pending) |
+| 1 | USD OIS (SOFR) curve | pulled (33 SR3 contracts; bootstrapping into a curve pending) |
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (43 factors) | not started |

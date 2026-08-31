@@ -15,6 +15,7 @@ Requires a Databento API key in the DATABENTO_API_KEY environment variable
 https://databento.com -- this project uses paid access already provisioned.
 """
 import os
+import re
 from datetime import date, timedelta
 
 import databento as db
@@ -22,6 +23,11 @@ import databento as db
 DATASET = "GLBX.MDP3"        # CME Globex MDP 3.0
 SR3_PARENT = "SR3.FUT"       # 3-month SOFR futures, all live contracts
 SR1_PARENT = "SR1.FUT"       # 1-month SOFR futures
+
+# Outright futures only, e.g. "SR3Z6" (product + month code + 1-digit year).
+# The "parent" symbology also returns spreads/butterflies (e.g. "SR3Z6-SR3U0",
+# "SR3:AB 03Y U6") which must be filtered out before use as curve pillars.
+_OUTRIGHT_RE = re.compile(r"^(SR3|SR1)[FGHJKMNQUVXZ]\d$")
 
 
 def _client():
@@ -37,9 +43,10 @@ def _client():
 
 def fetch_raw(ref_date, parent=SR3_PARENT, lookback_days=5):
     """Pull the most recent daily settlement (close) price for every live
-    SR3 (or SR1) contract as of `ref_date`.
+    outright SR3 (or SR1) contract as of `ref_date` (spreads/butterflies
+    filtered out).
 
-    Returns a pandas DataFrame with one row per contract: symbol, raw_symbol,
+    Returns a pandas DataFrame with one row per contract: symbol,
     close (settlement price), ts_event.
     """
     client = _client()
@@ -53,12 +60,15 @@ def fetch_raw(ref_date, parent=SR3_PARENT, lookback_days=5):
         start=start.isoformat(),
         end=(end + timedelta(days=1)).isoformat(),
     )
-    df = data.to_df()
+    df = data.to_df().reset_index()   # ts_event is the index in the raw response
     if df.empty:
         raise ValueError(f"No {parent} data returned for {start}..{end}")
-    # keep the latest bar per contract (instrument_id / symbol)
+    df = df[df["symbol"].apply(lambda s: bool(_OUTRIGHT_RE.match(s)))]
+    if df.empty:
+        raise ValueError(f"No outright contracts matched for {parent} in {start}..{end}")
+    # keep the latest bar per contract
     df = df.sort_values("ts_event").groupby("symbol", as_index=False).last()
-    return df
+    return df[["symbol", "close", "ts_event"]]
 
 
 def clean(raw_df):
