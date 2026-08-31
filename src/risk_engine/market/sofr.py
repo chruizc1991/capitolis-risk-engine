@@ -16,9 +16,13 @@ https://databento.com -- this project uses paid access already provisioned.
 """
 import os
 import re
+from calendar import monthrange
 from datetime import date, timedelta
 
 import databento as db
+
+from capitolis_pricers.curves import Curve
+from capitolis_pricers.daycount import add_months, year_fraction
 
 DATASET = "GLBX.MDP3"        # CME Globex MDP 3.0
 SR3_PARENT = "SR3.FUT"       # 3-month SOFR futures, all live contracts
@@ -28,6 +32,10 @@ SR1_PARENT = "SR1.FUT"       # 1-month SOFR futures
 # The "parent" symbology also returns spreads/butterflies (e.g. "SR3Z6-SR3U0",
 # "SR3:AB 03Y U6") which must be filtered out before use as curve pillars.
 _OUTRIGHT_RE = re.compile(r"^(SR3|SR1)[FGHJKMNQUVXZ]\d$")
+
+# Standard futures month codes -> calendar month number.
+_MONTH_CODE = {"F": 1, "G": 2, "H": 3, "J": 4, "K": 5, "M": 6,
+               "N": 7, "Q": 8, "U": 9, "V": 10, "X": 11, "Z": 12}
 
 
 def _client():
@@ -83,12 +91,64 @@ def clean(raw_df):
     return out
 
 
-def build_curve(ref_date):
-    """Bootstrap a capitolis_pricers.curves.Curve from SR3 futures. Not implemented
-    yet -- needs contract-to-tenor mapping (each SR3 contract covers a specific
-    3-month IMM period) before the implied rates can be placed on curve pillars."""
-    raise NotImplementedError(
-        "fetch_raw()/clean() work; still need to map each SR3 contract's IMM "
-        "period to a curve pillar (years from ref_date) before bootstrapping "
-        "discount factors -- next step once real data has been pulled once"
-    )
+def _third_wednesday(year, month):
+    """CME IMM date: the third Wednesday of the month."""
+    first_weekday, _ = monthrange(year, month)  # first_weekday: Mon=0..Sun=6
+    first_wednesday_day = 1 + (2 - first_weekday) % 7
+    return date(year, month, first_wednesday_day + 14)
+
+
+def _contract_period(symbol, ref_date):
+    """Map an outright symbol (e.g. 'SR3Z6') to its 3-month reference period
+    (start, end), both `date`s. Period runs IMM-date to IMM-date + 3 months.
+    The year code is a single digit (last digit of the year); resolved to the
+    nearest such year that is not in the past relative to `ref_date`."""
+    if not _OUTRIGHT_RE.match(symbol):
+        raise ValueError(f"Not an outright SR3/SR1 symbol: {symbol!r}")
+    month = _MONTH_CODE[symbol[3]]
+    year_digit = int(symbol[4])
+    year = ref_date.year - (ref_date.year % 10) + year_digit
+    if year < ref_date.year:
+        year += 10
+    start = _third_wednesday(year, month)
+    if start < ref_date:
+        start = _third_wednesday(year + 10, month)  # wrapped a decade, rare edge case
+    end = add_months(start, 3)
+    return start, end
+
+
+def build_curve(ref_date, raw_df=None, basis="ACT/365F"):
+    """Bootstrap a capitolis_pricers.curves.Curve from SR3 futures.
+
+    Each contract's implied rate is treated as the (simply-compounded, ACT/360)
+    forward SOFR rate over its own 3-month reference period. Discount factors
+    are chained sequentially from `ref_date` through each period in turn; any
+    gap between `ref_date` and the first contract's start is back-filled flat
+    at that first contract's rate. This is a reasonable, standard first-pass
+    bootstrap -- not a full OIS-convexity-adjusted curve (a refinement for
+    later, not needed to unblock pricing).
+    """
+    ref_date = ref_date if isinstance(ref_date, date) else date.fromisoformat(str(ref_date))
+    if raw_df is None:
+        raw_df = fetch_raw(ref_date)
+    cleaned = clean(raw_df)
+
+    periods = []
+    for row in cleaned:
+        start, end = _contract_period(row["symbol"], ref_date)
+        periods.append((start, end, row["implied_rate"]))
+    periods.sort(key=lambda p: p[0])
+
+    pillar_times, discount_factors = [0.0], [1.0]
+    df = 1.0
+    prev_end = ref_date
+    for start, end, rate in periods:
+        if end <= prev_end:
+            continue  # already covered / stale contract, skip
+        tau = year_fraction(prev_end, end, "ACT/360")
+        df = df / (1.0 + rate * tau)               # simply-compounded SOFR convention
+        pillar_times.append(year_fraction(ref_date, end, basis))
+        discount_factors.append(df)
+        prev_end = end
+
+    return Curve(ref_date, pillar_times, discount_factors, basis)

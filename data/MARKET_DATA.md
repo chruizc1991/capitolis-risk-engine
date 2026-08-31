@@ -24,7 +24,7 @@ genuinely **not started**.
 | Date range | Single as-of snapshot for the valuation date; if a historical-proxy curve build is needed, pull daily back to the depth of the vol/correl lookback (see §5) |
 | Frequency | Daily (snapshot as of valuation date) |
 | Day count | ACT/360 |
-| Status | **pulled** — 33 outright SR3 contract settlement prices fetched live via Databento and converted to implied forward rates (3.6%–4.6%, sane range), cached at `data/raw/sofr_sr3_futures_2026-08-28.json`. Not yet **validated**/bootstrapped into an actual curve — `build_curve()` (map each contract's IMM period to a curve pillar, derive discount factors) is the remaining piece |
+| Status | **pulled + bootstrapped** — `build_curve()` maps each SR3 contract to its 3-month IMM reference period, chains discount factors sequentially (ACT/360, simply-compounded), and returns a usable `capitolis_pricers.curves.Curve`. Sanity-checked: zero rates ~3.9%-4.2% across 0.25y-10y, monotonically decreasing discount factors. All 8 bond trades (BF_0001-4, BTRS_0001-4) now price successfully off this real curve. Not yet **validated** against a second independent source (e.g. cross-check vs. Treasury par yields, §6) |
 | Note | API key is never committed to the repo — set via environment variable only |
 
 ## 2. Equity spot prices + dividend yields (41 names)
@@ -89,7 +89,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 
 | # | Series | Status |
 |---|---|---|
-| 1 | USD OIS (SOFR) curve | pulled (33 SR3 contracts; bootstrapping into a curve pending) |
+| 1 | USD OIS (SOFR) curve | pulled + bootstrapped, usable; not yet cross-validated |
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (43 factors) | not started |
