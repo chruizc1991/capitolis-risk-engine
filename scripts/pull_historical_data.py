@@ -48,6 +48,10 @@ def main():
 
     print("\nUSDJPY (yfinance)...")
     fx = fetch_fx_history(start, end)
+    # Same tz-naive/date-only normalization as equities below -- yfinance
+    # returns a tz-aware index that won't align with FRED's tz-naive one.
+    fx = fx.tz_localize(None).groupby(fx.tz_localize(None).index.date).last()
+    fx.index.name = "date"
     fx.to_frame("USDJPY").to_csv(os.path.join(OUT, "history_usdjpy.csv"))
     print(f"  {len(fx)} daily observations saved")
 

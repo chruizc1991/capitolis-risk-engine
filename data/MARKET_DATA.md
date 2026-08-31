@@ -70,7 +70,7 @@ genuinely **not started**.
 | History to start pulling now | **1-3 years of daily returns** for all 39 factors, so the Week 2 correlation build isn't blocked on data collection |
 | Date range | 2023-08-31 to 2026-08-30 (3yr) as the outer bound; can trim to 1yr if data quality/availability is an issue for some names |
 | Frequency | Daily |
-| Status | **history pulled** (not yet correlated — that's Week 2). `scripts/pull_historical_data.py` fetches all 39 factors: SOFR level (FRED, 781 obs), USDJPY (yfinance, 777 obs), all 37 equity names (yfinance, 778 rows after normalizing US/Tokyo market-hour timestamps to date-only — mixed timestamps initially produced a mostly-NaN merge, fixed). ~4% NaN remaining (expected: holiday mismatches between US/Tokyo calendars). Cached at `data/processed/history_{sofr,usdjpy,equities}.csv` (gitignored) |
+| Status | **built** — `src/risk_engine/market/correlations.py` computes the full 39x39 pairwise matrix (log returns for equity/FX, rate changes for RATE_USD, inner-joined on common dates -- 613 fully-aligned days -- so the matrix is PSD by construction, not just hoped to be). **PSD confirmed**: min eigenvalue 0.16 (safely positive). Sanity checks pass: RATE_USD correlates weakly with everything (-4% to +9%, expected for daily rate changes); FX_USDJPY correlates positively with the JPY-quoted equity names (~0.25 avg, economically sensible); equity-equity pairwise correlation averages ~0.15 (reasonable for a mixed-sector, mixed-market basket), max 0.82. Cached at `data/processed/correlation_matrix.csv` (gitignored). History itself: `scripts/pull_historical_data.py` fetches all 39 factors (SOFR/FRED 781 obs, USDJPY/yfinance 777 obs, 37 equities/yfinance 778 rows) — fixed two tz-alignment bugs (US/Tokyo market-hour timestamps for equities, then the same class of bug for FX) that were silently breaking the join |
 
 ## 6. Risk-free government/agency bond reference data (validation)
 
@@ -95,7 +95,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (39 factors) | pulled + computed (historical realized, sane) |
-| 5 | Correlation matrix (historical proxy, Week 2) | 3yr history pulled for all 39 factors; correlation calc itself is Week 2 |
+| 5 | Correlation matrix (historical proxy, Week 2) | built, PSD-confirmed, sanity-checked |
 | 6 | Bond reference data (validation cross-check) | not started (optional) |
 
 **USD curve unblocked** — Databento (paid, confirmed access) covers SOFR
