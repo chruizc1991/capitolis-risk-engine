@@ -47,7 +47,7 @@ genuinely **not started**.
 | Tenors needed | SPOT (T+2), O/N, T/N, 1W, 1M, 2M, 3M, 6M, 9M, 1Y, 2Y |
 | Date range | Snapshot as of valuation date; only needed for the JPY compo trades (EQTRS_0005, EQTRS_0006) |
 | Frequency | Daily |
-| Status | **not started** |
+| Status | **spot pulled** (159.80 as of 2026-08-30, cached at `data/raw/usdjpy_spot_2026-08-30.json`) — sufficient to *price* the JPY compo trades. Forward points still **not started**, needed only once FX is simulated as a risk factor |
 | Note | Only spot is needed to *price*; the full forward curve (swap points) is needed once FX is simulated as a risk factor |
 
 ## 4. Volatilities (simulation calibration — not used by the linear pricers)
@@ -91,7 +91,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 |---|---|---|
 | 1 | USD OIS (SOFR) curve | not started |
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
-| 3 | USDJPY FX spot + forward curve | not started |
+| 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (43 factors) | not started |
 | 5 | Correlation matrix (historical proxy, Week 2) | not started — start pulling 1-3yr history now |
 | 6 | Bond reference data (validation cross-check) | not started (optional) |
