@@ -24,7 +24,8 @@ genuinely **not started**.
 | Date range | Single as-of snapshot for the valuation date; if a historical-proxy curve build is needed, pull daily back to the depth of the vol/correl lookback (see §5) |
 | Frequency | Daily (snapshot as of valuation date) |
 | Day count | ACT/360 |
-| Status | **pulled + bootstrapped** — `build_curve()` maps each SR3 contract to its 3-month IMM reference period, chains discount factors sequentially (ACT/360, simply-compounded), and returns a usable `capitolis_pricers.curves.Curve`. Sanity-checked: zero rates ~3.9%-4.2% across 0.25y-10y, monotonically decreasing discount factors. All 8 bond trades (BF_0001-4, BTRS_0001-4) now price successfully off this real curve. Not yet **validated** against a second independent source (e.g. cross-check vs. Treasury par yields, §6) |
+| Status | **pulled + bootstrapped + validated**. `build_curve()` maps each SR3 contract to its 3-month IMM reference period and chains discount factors sequentially (ACT/360, simply-compounded). Cross-checked against Treasury.gov's daily par yield curve (same date, 2026-08-28, independent source, no API key needed): spread widens smoothly from ~13bp (1Mo) to ~56bp (10Yr) — consistent with the normal SOFR-vs-Treasury term premium, no anomalies. **Caveat:** only 21 live SR3 contracts, reaching ~3.6yrs out (to ~2030-03); the curve beyond that is flat zero-rate extrapolation, not genuinely futures-implied — fine for pricing our book (longest trade maturity is 2044 for bonds, but those don't need rate-curve tenor beyond discounting, which extrapolation handles reasonably; flagging for awareness, not blocking). All 8 bond trades price correctly off this curve. |
+| Bug found + fixed | An earlier version of the year-decoding logic wrapped recently-expired serial contracts (e.g. `SR3Q6`, expiring Aug 2026) a full decade forward instead of dropping them, silently producing a spurious 3.5-year gap in the curve and a bad 10Y point (73bp vs. Treasury instead of the smooth ~56bp after the fix). Caught by this Treasury cross-check — a good example of why validating against an independent source matters. |
 | Note | API key is never committed to the repo — set via environment variable only |
 
 ## 2. Equity spot prices + dividend yields (41 names)
@@ -89,7 +90,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 
 | # | Series | Status |
 |---|---|---|
-| 1 | USD OIS (SOFR) curve | pulled + bootstrapped, usable; not yet cross-validated |
+| 1 | USD OIS (SOFR) curve | pulled + bootstrapped + validated (found and fixed a real bug via cross-check) |
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (43 factors) | not started |

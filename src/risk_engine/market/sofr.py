@@ -101,18 +101,20 @@ def _third_wednesday(year, month):
 def _contract_period(symbol, ref_date):
     """Map an outright symbol (e.g. 'SR3Z6') to its 3-month reference period
     (start, end), both `date`s. Period runs IMM-date to IMM-date + 3 months.
-    The year code is a single digit (last digit of the year); resolved to the
-    nearest such year that is not in the past relative to `ref_date`."""
+
+    The year code is a single digit (last digit of the year), resolved to
+    `ref_date`'s own decade. A contract whose resulting IMM date has already
+    passed relative to `ref_date` is a recently-expired one still lingering
+    in the feed, not a contract 10 years out -- build_curve() filters those
+    out via its "already covered" check rather than us guessing a wrapped
+    decade here (an earlier version did that and produced a spurious
+    multi-year gap in the curve; see week1 notes)."""
     if not _OUTRIGHT_RE.match(symbol):
         raise ValueError(f"Not an outright SR3/SR1 symbol: {symbol!r}")
     month = _MONTH_CODE[symbol[3]]
     year_digit = int(symbol[4])
     year = ref_date.year - (ref_date.year % 10) + year_digit
-    if year < ref_date.year:
-        year += 10
     start = _third_wednesday(year, month)
-    if start < ref_date:
-        start = _third_wednesday(year + 10, month)  # wrapped a decade, rare edge case
     end = add_months(start, 3)
     return start, end
 
