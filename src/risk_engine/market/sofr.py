@@ -18,8 +18,11 @@ import os
 import re
 from calendar import monthrange
 from datetime import date, timedelta
+from io import StringIO
 
 import databento as db
+import pandas as pd
+import requests
 
 from capitolis_pricers.curves import Curve
 from capitolis_pricers.daycount import add_months, year_fraction
@@ -154,3 +157,19 @@ def build_curve(ref_date, raw_df=None, basis="ACT/365F"):
         prev_end = end
 
     return Curve(ref_date, pillar_times, discount_factors, basis)
+
+
+FRED_SOFR_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SOFR"
+
+
+def fetch_history(start, end):
+    """Daily SOFR *level* history (short-rate proxy, not a full curve) for
+    vol/correlation calibration (data/MARKET_DATA.md #5). Free via FRED, no
+    API key needed -- separate from the futures-based curve build above,
+    which needs today's curve shape, not history of one point on it.
+    Returns a pandas Series of decimal rates indexed by date."""
+    resp = requests.get(FRED_SOFR_CSV, timeout=30)
+    resp.raise_for_status()
+    df = pd.read_csv(StringIO(resp.text), parse_dates=["observation_date"])
+    df = df.set_index("observation_date")["SOFR"] / 100.0
+    return df.loc[str(start):str(end)]

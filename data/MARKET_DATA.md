@@ -67,9 +67,9 @@ genuinely **not started**.
 |---|---|
 | Source | Historical correlation proxy (Week 2 task per project scope) — daily log returns of the USD short rate, each of the 41 equity spots, and USDJPY |
 | History to start pulling now | **1-3 years of daily returns** for all 43 factors, so the Week 2 correlation build isn't blocked on data collection |
-| Date range | 2023-08-24 to 2026-08-24 (3yr) as the outer bound; can trim to 1yr if data quality/availability is an issue for some names |
+| Date range | 2023-08-31 to 2026-08-30 (3yr) as the outer bound; can trim to 1yr if data quality/availability is an issue for some names |
 | Frequency | Daily |
-| Status | **not started** — flagged to start pulling now per project brief |
+| Status | **history pulled** (not yet correlated — that's Week 2). `scripts/pull_historical_data.py` fetches all 43 factors: SOFR level (FRED, 781 obs), USDJPY (yfinance, 777 obs), all 37 equity names (yfinance, 778 rows after normalizing US/Tokyo market-hour timestamps to date-only — mixed timestamps initially produced a mostly-NaN merge, fixed). ~4% NaN remaining (expected: holiday mismatches between US/Tokyo calendars). Cached at `data/processed/history_{sofr,usdjpy,equities}.csv` (gitignored) |
 
 ## 6. Risk-free government/agency bond reference data (validation)
 
@@ -94,7 +94,7 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (43 factors) | not started |
-| 5 | Correlation matrix (historical proxy, Week 2) | not started — start pulling 1-3yr history now |
+| 5 | Correlation matrix (historical proxy, Week 2) | 3yr history pulled for all 43 factors; correlation calc itself is Week 2 |
 | 6 | Bond reference data (validation cross-check) | not started (optional) |
 
 **USD curve unblocked** — Databento (paid, confirmed access) covers SOFR

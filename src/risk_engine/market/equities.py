@@ -68,9 +68,15 @@ def fetch_dividends(isin_to_ticker):
 
 def fetch_history(isin_to_ticker, start, end):
     """Daily close-price history for vol/correlation calibration (data/MARKET_DATA.md #5).
-    Returns {isin: pandas.Series of closes indexed by date}."""
+    Returns {isin: pandas.Series of closes indexed by date}. A ticker that
+    errors is skipped (logged), not fatal to the batch -- same as fetch_raw."""
     history = {}
     for isin, ticker in isin_to_ticker.items():
-        hist = yf.Ticker(ticker).history(start=start, end=end)
-        history[isin] = hist["Close"]
+        try:
+            hist = yf.Ticker(_to_yfinance_symbol(ticker)).history(start=start, end=end)
+            if hist.empty:
+                raise ValueError("empty history")
+            history[isin] = hist["Close"]
+        except Exception as exc:
+            print(f"WARN: history fetch failed for {ticker} ({isin}): {exc}")
     return history
