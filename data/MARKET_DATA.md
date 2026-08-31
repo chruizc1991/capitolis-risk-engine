@@ -18,14 +18,14 @@ genuinely **not started**.
 
 | Field | Value |
 |---|---|
-| Source | FRED (`SOFR`, `SOFR30DAYAVG`) for the short end; CME/Bloomberg-style OIS swap quotes for pillars beyond ~3M — **need to confirm access to a real OIS swap curve source**; FRED alone gives spot SOFR, not a full par-swap curve |
-| Identifier | FRED series `SOFR`; OIS pillar source TBD |
+| Source | **Databento** (paid access confirmed) — CME Globex SOFR futures: `SR3` (3-month, primary curve-building instrument) and `SR1` (1-month, short end). No ready-made OIS swap curve is published anywhere; we bootstrap our own curve from futures settlement prices (`futures price -> implied forward rate -> discount factor`) |
+| Identifier | Databento dataset `GLBX.MDP3`, parent symbols `SR3.FUT` / `SR1.FUT` |
 | Tenors needed | O/N, T/N, 1W, 2W, 1M, 2M, 3M, 6M, 9M, 1Y, 18M, 2Y, 3Y, 4Y, 5Y, 7Y, 10Y |
 | Date range | Single as-of snapshot for the valuation date; if a historical-proxy curve build is needed, pull daily back to the depth of the vol/correl lookback (see §5) |
 | Frequency | Daily (snapshot as of valuation date) |
 | Day count | ACT/360 |
-| Status | **not started** |
-| Blocker | Need to confirm access to a paid/quality OIS swap curve source (Bloomberg/Refinitiv) vs. approximating pillars from FRED + Treasury par yields |
+| Status | **in progress** — `src/risk_engine/market/sofr.py` fetch/clean implemented against the Databento API (`fetch_raw`, `clean`); not yet run (needs `DATABENTO_API_KEY` env var set locally). Bootstrapping (`build_curve`: map each SR3 contract's IMM period to a curve pillar and derive discount factors) is the remaining piece, not yet implemented |
+| Note | API key is never committed to the repo — set via environment variable only |
 
 ## 2. Equity spot prices + dividend yields (41 names)
 
@@ -89,14 +89,15 @@ blank in the pricer's credit-lookup sense). Deferred per pricer README §8.
 
 | # | Series | Status |
 |---|---|---|
-| 1 | USD OIS (SOFR) curve | not started |
+| 1 | USD OIS (SOFR) curve | in progress (Databento fetch coded, bootstrapping pending) |
 | 2 | Equity spots + dividends (37 unique names) | pulled (not yet validated) |
 | 3 | USDJPY FX spot + forward curve | spot pulled (forward curve not started) |
 | 4 | Volatilities (43 factors) | not started |
 | 5 | Correlation matrix (historical proxy, Week 2) | not started — start pulling 1-3yr history now |
 | 6 | Bond reference data (validation cross-check) | not started (optional) |
 
-**Nothing is blocked on data access decisions yet** — the open question is
-which paid data sources (if any) are available for the OIS swap curve and FX
-forward points beyond what FRED/yfinance provide for free. Flagging this for
-the Friday check-in.
+**USD curve unblocked** — Databento (paid, confirmed access) covers SOFR
+futures for curve building; fetch/clean code is in place, bootstrapping is
+the remaining step. **Still open:** FX forward points beyond spot (no free
+or currently-confirmed source), and volatilities. Flagging for the Friday
+check-in.

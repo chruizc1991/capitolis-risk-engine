@@ -3,5 +3,6 @@ pandas
 scipy
 fredapi
 yfinance
+databento
 pytest
 jupyter
